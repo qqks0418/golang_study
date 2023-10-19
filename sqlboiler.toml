@@ -1,0 +1,18 @@
+pkgname="entity"
+output="entity"
+wipe = true
+add-global-variants = true
+add-panic-variants = false
+struct-tag-casing = "camel"
+
+[mysql]
+  dbname  = "test_db"
+  host    = "localhost"
+  port    = 3306
+  user    = "root"
+  pass    = "password"
+  sslmode = "false"
+  #whitelist = [
+  #  "todo",
+  #  "user"
+  #]

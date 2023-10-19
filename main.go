@@ -5,8 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/qqks0418/golang_study/consts"
-	"github.com/qqks0418/golang_study/controller/task"
-	"github.com/qqks0418/golang_study/controller/user"
+	"github.com/qqks0418/golang_study/controller/env"
 )
 
 func main() {
@@ -14,8 +13,11 @@ func main() {
 	route := gin.Default()
 	v := route.Group("/v1")
 
-	user.UserApi(v)		// ユーザーAPI
-	task.TaskApi(v)		// タスクAPI
+	//user.UserApi(v)		// ユーザーAPI
+	//task.TaskApi(v)		// タスクAPI
+	//todo.TodoApi(); 
+	env.EnvApi(v);
+	//env.EnvHtml(route); 
 
 	// http://localhost:8080/v1/user?category=aaa
 	// http://localhost:8080/v1/task/all
