@@ -28,7 +28,7 @@ type EnvList struct {
 	EnvValue string `json:"envValue"`
 }
 
-func EnvApi(v *gin.RouterGroup) {
+func GetEnvApi(v *gin.RouterGroup) {
 
 	// データベースのハンドルを取得する
 	db, err := sql.Open("mysql", "root:password@(localhost:3306)/test_db?parseTime=true")

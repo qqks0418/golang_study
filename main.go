@@ -16,7 +16,9 @@ func main() {
 	//user.UserApi(v)		// ユーザーAPI
 	//task.TaskApi(v)		// タスクAPI
 	//todo.TodoApi(); 
-	env.EnvApi(v);
+	//env.GetEnvApi(v);
+	env.CreateEnvApi(v);
+	//env.DeleteEnvApi(v);
 	//env.EnvHtml(route); 
 
 	// http://localhost:8080/v1/user?category=aaa
