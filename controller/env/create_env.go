@@ -34,6 +34,25 @@ func CreateEnvApi(v *gin.RouterGroup) {
 
 		fmt.Println("---- " + reqEvList[0].EnvKey.String)
 
+		// トランザクション（例）
+		/*
+		tx, err := boil.BeginTx(c, nil)
+		if err != nil {
+			return
+		}
+		var tt entity.EnvironmentVariable
+		tt.ID = "aaaa"
+		if err := tt.Upsert(c, tx, boil.Whitelist("env_value"), boil.Infer()); err != nil {
+			tx.Rollback()
+			return
+		}
+
+		if err := tx.Commit(); err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+		*/
+
 		// データベースに登録
 		for _, ev := range reqEvList {
 			//if ev.EnvValue.String == "" {
@@ -55,6 +74,7 @@ func CreateEnvApi(v *gin.RouterGroup) {
 				// ここではエラーを返さない
 				log.Fatal(err)
 			}
+			
 
 			//if err := t.Upsert(c, db, boil.Whitelist("env_value"), boil.Infer()); err != nil {
 			//	fmt.Println(err)
