@@ -568,7 +568,7 @@ func testTodosSelect(t *testing.T) {
 }
 
 var (
-	todoDBTypes = map[string]string{`ID`: `int`, `TodoName`: `varchar`, `TodoStatus`: `int`, `UpdatedAt`: `timestamp`, `CreatedAt`: `timestamp`}
+	todoDBTypes = map[string]string{`ID`: `int`, `TodoName`: `varchar`, `TodoStatus`: `int`, `CreatedAt`: `datetime`, `UpdatedAt`: `datetime`}
 	_           = bytes.MinRead
 )
 

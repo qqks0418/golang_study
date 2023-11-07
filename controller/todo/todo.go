@@ -111,7 +111,7 @@ func sqlboilerInsert(ctx context.Context) {
 	//u.ID = 1
 	u.UserName = "武田信玄"
 	u.UserJob = "甲斐の虎あいうえおかきくけこ"
-	u.TodoID = 3
+	u.TodoID = "3"
 
 	// userテーブルに登録
 	if err := u.Insert(ctx, tx, boil.Infer()); err != nil {

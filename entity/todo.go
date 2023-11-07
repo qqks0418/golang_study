@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -27,8 +26,8 @@ type Todo struct {
 	ID         int       `boil:"id" json:"id" toml:"id" yaml:"id"`
 	TodoName   string    `boil:"todo_name" json:"todoName" toml:"todoName" yaml:"todoName"`
 	TodoStatus int       `boil:"todo_status" json:"todoStatus" toml:"todoStatus" yaml:"todoStatus"`
-	UpdatedAt  null.Time `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
-	CreatedAt  null.Time `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	CreatedAt  time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt  time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *todoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L todoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -38,28 +37,28 @@ var TodoColumns = struct {
 	ID         string
 	TodoName   string
 	TodoStatus string
-	UpdatedAt  string
 	CreatedAt  string
+	UpdatedAt  string
 }{
 	ID:         "id",
 	TodoName:   "todo_name",
 	TodoStatus: "todo_status",
-	UpdatedAt:  "updated_at",
 	CreatedAt:  "created_at",
+	UpdatedAt:  "updated_at",
 }
 
 var TodoTableColumns = struct {
 	ID         string
 	TodoName   string
 	TodoStatus string
-	UpdatedAt  string
 	CreatedAt  string
+	UpdatedAt  string
 }{
 	ID:         "todo.id",
 	TodoName:   "todo.todo_name",
 	TodoStatus: "todo.todo_status",
-	UpdatedAt:  "todo.updated_at",
 	CreatedAt:  "todo.created_at",
+	UpdatedAt:  "todo.updated_at",
 }
 
 // Generated where
@@ -68,14 +67,14 @@ var TodoWhere = struct {
 	ID         whereHelperint
 	TodoName   whereHelperstring
 	TodoStatus whereHelperint
-	UpdatedAt  whereHelpernull_Time
-	CreatedAt  whereHelpernull_Time
+	CreatedAt  whereHelpertime_Time
+	UpdatedAt  whereHelpertime_Time
 }{
 	ID:         whereHelperint{field: "`todo`.`id`"},
 	TodoName:   whereHelperstring{field: "`todo`.`todo_name`"},
 	TodoStatus: whereHelperint{field: "`todo`.`todo_status`"},
-	UpdatedAt:  whereHelpernull_Time{field: "`todo`.`updated_at`"},
-	CreatedAt:  whereHelpernull_Time{field: "`todo`.`created_at`"},
+	CreatedAt:  whereHelpertime_Time{field: "`todo`.`created_at`"},
+	UpdatedAt:  whereHelpertime_Time{field: "`todo`.`updated_at`"},
 }
 
 // TodoRels is where relationship names are stored.
@@ -95,9 +94,9 @@ func (*todoR) NewStruct() *todoR {
 type todoL struct{}
 
 var (
-	todoAllColumns            = []string{"id", "todo_name", "todo_status", "updated_at", "created_at"}
-	todoColumnsWithoutDefault = []string{"todo_name", "todo_status", "updated_at", "created_at"}
-	todoColumnsWithDefault    = []string{"id"}
+	todoAllColumns            = []string{"id", "todo_name", "todo_status", "created_at", "updated_at"}
+	todoColumnsWithoutDefault = []string{"todo_name", "todo_status"}
+	todoColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	todoPrimaryKeyColumns     = []string{"id"}
 	todoGeneratedColumns      = []string{}
 )
@@ -462,11 +461,11 @@ func (o *Todo) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	if !boil.TimestampsAreSkipped(ctx) {
 		currTime := time.Now().In(boil.GetLocation())
 
-		if queries.MustTime(o.UpdatedAt).IsZero() {
-			queries.SetScanner(&o.UpdatedAt, currTime)
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
 		}
-		if queries.MustTime(o.CreatedAt).IsZero() {
-			queries.SetScanner(&o.CreatedAt, currTime)
+		if o.UpdatedAt.IsZero() {
+			o.UpdatedAt = currTime
 		}
 	}
 
@@ -580,7 +579,7 @@ func (o *Todo) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 	if !boil.TimestampsAreSkipped(ctx) {
 		currTime := time.Now().In(boil.GetLocation())
 
-		queries.SetScanner(&o.UpdatedAt, currTime)
+		o.UpdatedAt = currTime
 	}
 
 	var err error
@@ -735,10 +734,10 @@ func (o *Todo) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColu
 	if !boil.TimestampsAreSkipped(ctx) {
 		currTime := time.Now().In(boil.GetLocation())
 
-		queries.SetScanner(&o.UpdatedAt, currTime)
-		if queries.MustTime(o.CreatedAt).IsZero() {
-			queries.SetScanner(&o.CreatedAt, currTime)
+		if o.CreatedAt.IsZero() {
+			o.CreatedAt = currTime
 		}
+		o.UpdatedAt = currTime
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {

@@ -23,9 +23,63 @@ func DeleteEnvApi(v *gin.RouterGroup) {
 		log.Fatal(err)
 	}
 	boil.SetDB(db)
+	boil.DebugMode = true
 	//defer db.Close()
 	//ctx := context.Background()
 
+	v.DELETE("/env/:name", func(c *gin.Context) {
+
+		name := c.Param("name")
+		fmt.Println(name)
+
+		ess, _ := entity.EnvSettings(
+			qm.Where("tenant_id = ?", "A"),
+			qm.And("name = ?", name),
+		).AllG(c)
+
+		tagetDels := [] string{"11", "12"}
+
+		for _, v := range ess {
+			fmt.Println(v.ID)
+			tagetDels = append(tagetDels, v.ID)
+		}
+
+		tagets := make([]interface{}, len(tagetDels))
+		for i, taget := range tagetDels {
+			tagets[i] = taget
+		}
+
+		_, err := entity.Envs(
+			qm.WhereIn("env_setting_id IN ?", tagets...),
+		).DeleteAllG(c)
+
+		if err != nil {
+			// ここではエラーを返さない
+			log.Fatal(err)
+		}
+
+		_, es_err := entity.EnvSettings(
+			qm.Where("tenant_id = ?", "A"),
+			qm.And("name = ?", name),
+		).DeleteAllG(c)
+
+		if es_err != nil {
+			// ここではエラーを返さない
+			log.Fatal(es_err)
+		}
+
+		stages, _ := entity.Stages(
+			qm.Where("tenant_id = ?", "A"),
+		).AllG(c)
+
+		for _, v := range stages {
+			fmt.Println(v.StageName)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"msg": "成功"})
+	})
+
+	/*
 	// 削除2
 	v.DELETE("/env/:envKey", func(c *gin.Context) {
 
@@ -44,8 +98,10 @@ func DeleteEnvApi(v *gin.RouterGroup) {
 
 		c.JSON(http.StatusOK, gin.H{"msg": "成功"})
 	})
+	*/
 
 
+	/*
 	// 削除1
 	v.DELETE("/env/:envKey/:stageId", func(c *gin.Context) {
 
@@ -56,21 +112,6 @@ func DeleteEnvApi(v *gin.RouterGroup) {
 
 		fmt.Println(envKey)
 		fmt.Println(stageId)
-
-		/*
-		// 主キーで削除なので条件指定出来ない
-		t := &entity.EnvironmentVariable{
-			ID: "777",
-			TenantID: envKey,
-			//EnvKey: "aaa",
-			//StageID: "",
-		}
-
-		if _, err := t.DeleteG(c); err != nil {
-			fmt.Println(err)
-			return
-		}
-		*/
 
 		// DELETE FROM "pilots" WHERE "id"=$1;
 		_, err := entity.EnvironmentVariables(
@@ -91,4 +132,5 @@ func DeleteEnvApi(v *gin.RouterGroup) {
 		
 		c.JSON(http.StatusOK, gin.H{"msg": "成功"})
 	})
+	*/
 }

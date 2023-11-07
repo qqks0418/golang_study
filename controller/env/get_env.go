@@ -1,17 +1,10 @@
 package env
 
 import (
-	"database/sql"
-	"log"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/qqks0418/golang_study/entity"
-	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
+/*
 // 詳細
 var em = map[string][]entity.EnvironmentVariable{}
 
@@ -20,6 +13,7 @@ type EnvRes struct {
 	EnvList []EnvList `json:"envList"`
 	EnvDetailMap map[string][]entity.EnvironmentVariable `json:"envDetailMap"`
 }
+*/
 
 // リスト用
 type EnvList struct {
@@ -28,6 +22,7 @@ type EnvList struct {
 	EnvValue string `json:"envValue"`
 }
 
+/*
 func GetEnvApi(v *gin.RouterGroup) {
 
 	// データベースのハンドルを取得する
@@ -107,3 +102,4 @@ func detail(c *gin.Context, tenantId string, envKey string) map[string][]entity.
 
     return em
 }
+*/

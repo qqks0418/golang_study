@@ -6,9 +6,17 @@ package entity
 import "testing"
 
 func TestUpsert(t *testing.T) {
-	t.Run("EnvironmentVariables", testEnvironmentVariablesUpsert)
+	t.Run("PrismaMigrations", testPrismaMigrationsUpsert)
 
-	t.Run("Hoges", testHogesUpsert)
+	t.Run("Envs", testEnvsUpsert)
+
+	t.Run("EnvSettings", testEnvSettingsUpsert)
+
+	t.Run("Posts", testPostsUpsert)
+
+	t.Run("Stages", testStagesUpsert)
+
+	t.Run("Tasks", testTasksUpsert)
 
 	t.Run("Todos", testTodosUpsert)
 

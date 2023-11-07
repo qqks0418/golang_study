@@ -4,13 +4,21 @@
 package entity
 
 var TableNames = struct {
-	EnvironmentVariables string
-	Hoge                 string
-	Todo                 string
-	User                 string
+	PrismaMigrations string
+	Env              string
+	EnvSetting       string
+	Post             string
+	Stage            string
+	Task             string
+	Todo             string
+	User             string
 }{
-	EnvironmentVariables: "environment_variables",
-	Hoge:                 "hoge",
-	Todo:                 "todo",
-	User:                 "user",
+	PrismaMigrations: "_prisma_migrations",
+	Env:              "env",
+	EnvSetting:       "env_setting",
+	Post:             "post",
+	Stage:            "stage",
+	Task:             "task",
+	Todo:             "todo",
+	User:             "user",
 }

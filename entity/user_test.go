@@ -494,6 +494,283 @@ func testUsersInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testUserOneToOneTaskUsingUserIdTask(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var foreign Task
+	var local User
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &foreign, taskDBTypes, true, taskColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Task struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &local, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreign.UserId = local.ID
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.UserIdTask().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.UserId != foreign.UserId {
+		t.Errorf("want: %v, got %v", foreign.UserId, check.UserId)
+	}
+
+	ranAfterSelectHook := false
+	AddTaskHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Task) error {
+		ranAfterSelectHook = true
+		return nil
+	})
+
+	slice := UserSlice{&local}
+	if err = local.L.LoadUserIdTask(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.UserIdTask == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.UserIdTask = nil
+	if err = local.L.LoadUserIdTask(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.UserIdTask == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	if !ranAfterSelectHook {
+		t.Error("failed to run AfterSelect hook for relationship")
+	}
+}
+
+func testUserOneToOneSetOpTaskUsingUserIdTask(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c Task
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, taskDBTypes, false, strmangle.SetComplement(taskPrimaryKeyColumns, taskColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, taskDBTypes, false, strmangle.SetComplement(taskPrimaryKeyColumns, taskColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Task{&b, &c} {
+		err = a.SetUserIdTask(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.UserIdTask != x {
+			t.Error("relationship struct not set to correct value")
+		}
+		if x.R.UserIdUser != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+
+		if a.ID != x.UserId {
+			t.Error("foreign key was wrong value", a.ID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(x.UserId))
+		reflect.Indirect(reflect.ValueOf(&x.UserId)).Set(zero)
+
+		if err = x.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.ID != x.UserId {
+			t.Error("foreign key was wrong value", a.ID, x.UserId)
+		}
+
+		if _, err = x.Delete(ctx, tx); err != nil {
+			t.Fatal("failed to delete x", err)
+		}
+	}
+}
+
+func testUserToManyAuthorIdPosts(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c Post
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, true, userColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize User struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, postDBTypes, false, postColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, postDBTypes, false, postColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.AuthorId = a.ID
+	c.AuthorId = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.AuthorIdPosts().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.AuthorId == b.AuthorId {
+			bFound = true
+		}
+		if v.AuthorId == c.AuthorId {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := UserSlice{&a}
+	if err = a.L.LoadAuthorIdPosts(ctx, tx, false, (*[]*User)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.AuthorIdPosts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.AuthorIdPosts = nil
+	if err = a.L.LoadAuthorIdPosts(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.AuthorIdPosts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testUserToManyAddOpAuthorIdPosts(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a User
+	var b, c, d, e Post
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, userDBTypes, false, strmangle.SetComplement(userPrimaryKeyColumns, userColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Post{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, postDBTypes, false, strmangle.SetComplement(postPrimaryKeyColumns, postColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Post{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddAuthorIdPosts(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.AuthorId {
+			t.Error("foreign key was wrong value", a.ID, first.AuthorId)
+		}
+		if a.ID != second.AuthorId {
+			t.Error("foreign key was wrong value", a.ID, second.AuthorId)
+		}
+
+		if first.R.AuthorIdUser != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.AuthorIdUser != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.AuthorIdPosts[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.AuthorIdPosts[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.AuthorIdPosts().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
 func testUsersReload(t *testing.T) {
 	t.Parallel()
 
@@ -568,7 +845,7 @@ func testUsersSelect(t *testing.T) {
 }
 
 var (
-	userDBTypes = map[string]string{`ID`: `int`, `UserName`: `varchar`, `UserJob`: `varchar`, `TodoID`: `int`, `UpdatedAt`: `timestamp`, `CreatedAt`: `timestamp`}
+	userDBTypes = map[string]string{`ID`: `int`, `Email`: `varchar`, `CreatedAt`: `datetime`, `TodoID`: `varchar`, `UpdatedAt`: `datetime`, `UserJob`: `varchar`, `UserName`: `varchar`}
 	_           = bytes.MinRead
 )
 

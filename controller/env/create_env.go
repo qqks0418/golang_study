@@ -2,12 +2,10 @@ package env
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/qqks0418/golang_study/entity"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
@@ -26,13 +24,13 @@ func CreateEnvApi(v *gin.RouterGroup) {
 
 	v.POST("/env", func(c *gin.Context) {
 		// リクエスト取得
-		var reqEvList []entity.EnvironmentVariable
-		if err := c.ShouldBindJSON(&reqEvList); err != nil {
-			c.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
+		//var reqEvList []entity.EnvironmentVariable
+		//if err := c.ShouldBindJSON(&reqEvList); err != nil {
+		//	c.JSON(400, gin.H{"error": err.Error()})
+		//	return
+		//}
 
-		fmt.Println("---- " + reqEvList[0].EnvKey.String)
+		//fmt.Println("---- " + reqEvList[0].EnvKey.String)
 
 		// トランザクション（例）
 		/*
@@ -54,6 +52,7 @@ func CreateEnvApi(v *gin.RouterGroup) {
 		*/
 
 		// データベースに登録
+		/*
 		for _, ev := range reqEvList {
 			//if ev.EnvValue.String == "" {
 			//	continue
@@ -80,6 +79,7 @@ func CreateEnvApi(v *gin.RouterGroup) {
 			//	fmt.Println(err)
 			//}
 		}
-		c.JSON(201, gin.H{"msg": "成功", "data":reqEvList})
+		*/
+		//c.JSON(201, gin.H{"msg": "成功", "data":reqEvList})
 	})
 }
